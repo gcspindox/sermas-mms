@@ -71,11 +71,15 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry config virtualenvs.in-project true
 RUN poetry install --no-root
 
+RUN rm -rf /usr/share/dotnet \
+    && rm -rf /opt/ghc \
+    && rm -rf /usr/local/share/boost \
+    && rm -rf "$AGENT_TOOLSDIRECTORY"
+
 # Install fairseq from source
 RUN git clone https://github.com/pytorch/fairseq.git \
     && cd fairseq \
     && pip install --editable ./ \
-    && wget -P ./models_new 'https://dl.fbaipublicfiles.com/mms/asr/mms1b_all.pt'
 
 COPY . .
 
@@ -89,4 +93,5 @@ RUN $POETRY_VENV/bin/pip install torch==1.13.1+cu117 -f https://download.pytorch
 
 EXPOSE 9000
 
-CMD uvicorn webservice:app --host 0.0.0.0 --port 9000 --workers 1
+ADD entrypoint.sh /
+CMD [ "entrypoint.sh" ]
