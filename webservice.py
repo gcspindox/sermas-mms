@@ -82,8 +82,6 @@ def asr(
         default="txt", enum=["txt", "vtt", "srt", "tsv", "json"]),
 ):
     
-    temp_audio_path = load_audio(audio_file.file, encode)
-
     result = transcribe(load_audio(audio_file.file, encode), language, output)
 
     return StreamingResponse(
