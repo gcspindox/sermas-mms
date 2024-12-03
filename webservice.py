@@ -7,6 +7,8 @@ import importlib.metadata
 from typing import BinaryIO, Union
 from os import path
 
+import numpy as np
+
 import ffmpeg
 from fastapi import FastAPI, File, UploadFile, Query, applications, APIRouter
 from fastapi.responses import StreamingResponse, RedirectResponse
