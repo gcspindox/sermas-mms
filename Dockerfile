@@ -77,9 +77,7 @@ RUN rm -rf /usr/share/dotnet \
     && rm -rf "$AGENT_TOOLSDIRECTORY"
 
 # Install fairseq from source
-RUN git clone https://github.com/pytorch/fairseq.git \
-    && cd fairseq \
-    && pip install --editable ./
+RUN git clone https://github.com/pytorch/fairseq.git
 
 COPY . .
 

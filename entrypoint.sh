@@ -1,3 +1,5 @@
+pip install --editable ./fairseq
+
 MODEL_URL='https://dl.fbaipublicfiles.com/mms/asr/mms1b_all.pt'
 [-e $MODEL_URL] && wget -P ./model_new $MODEL_URL
 
