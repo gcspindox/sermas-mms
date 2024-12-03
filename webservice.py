@@ -125,7 +125,7 @@ def transcribe(audio_file_path: str, language: str, output_format: str):
     """
     try:
         command = [
-            'python', 'examples/mms/asr/infer/mms_infer.py',
+            'python', 'fairseq/examples/mms/asr/infer/mms_infer.py',
             '--model', '/content/fairseq/models_new/mms1b_all.pt',
             '--lang', language,
             '--audio', audio_file_path
