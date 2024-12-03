@@ -165,8 +165,6 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
     A NumPy array containing the audio waveform, in float32 dtype.
     """
 
-    temp_audio_path = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
-    
     if encode:
         try:
             # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
@@ -183,4 +181,4 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
         with open(temp_audio_path, "wb") as f:
             f.write(file.read())
 
-    return temp_audio_path # np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
+    return np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
