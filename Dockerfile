@@ -86,8 +86,8 @@ COPY --from=ffmpeg /root/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui.css swagger-ui-assets/swagger-ui.css
 COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-assets/swagger-ui-bundle.js
 
-RUN poetry install
-RUN $POETRY_VENV/bin/pip install torch==1.13.1+cu117 -f https://download.pytorch.org/whl/torch
+# RUN poetry install
+# RUN $POETRY_VENV/bin/pip install torch==1.13.1+cu117 -f https://download.pytorch.org/whl/torch
 
 EXPOSE 9000
 
