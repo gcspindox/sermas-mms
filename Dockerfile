@@ -81,6 +81,10 @@ RUN git clone https://github.com/pytorch/fairseq.git \
     && cd fairseq \
     && pip install --editable ./
 
+RUN pip install git+https://github.com/ahmetoner/whisper-asr-webservice.git
+
+RUN pip install soundfile    
+
 COPY . .
 
 COPY --from=ffmpeg /FFmpeg-6.1.1 /FFmpeg-6.1.1
@@ -94,4 +98,6 @@ COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-ass
 EXPOSE 9000
 
 ADD entrypoint.sh /
+RUN chmod +x entrypoint.sh
+
 CMD [ "entrypoint.sh" ]

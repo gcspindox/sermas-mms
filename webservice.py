@@ -23,7 +23,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 ASR_ENGINE = "MMS"
 
 SAMPLE_RATE = 16000
-LANGUAGE_CODES = ["eng"] # sorted(list(tokenizer.LANGUAGES.keys()))
+LANGUAGE_CODES = ["eng", "ita"] # sorted(list(tokenizer.LANGUAGES.keys()))
 
 BASE_URL = os.getenv("BASE_URL", "")
 
