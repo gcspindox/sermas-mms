@@ -84,10 +84,7 @@ def asr(
     
     temp_audio_path = load_audio(audio_file.file, encode)
 
-    try:
-        result = transcribe(temp_audio_path, language, output)
-    finally:
-        os.remove(temp_audio_path)
+    result = transcribe(load_audio(audio_file.file, encode), language, output)
 
     return StreamingResponse(
         result,  # iter([result]) ?
@@ -166,7 +163,6 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
     -------
     A NumPy array containing the audio waveform, in float32 dtype.
     """
-
     if encode:
         try:
             # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
@@ -180,7 +176,6 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
             raise RuntimeError(
                 f"Failed to load audio: {e.stderr.decode()}") from e
     else:
-        with open(temp_audio_path, "wb") as f:
-            f.write(file.read())
+        out = file.read()
 
     return np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
