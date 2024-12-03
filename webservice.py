@@ -7,8 +7,6 @@ import importlib.metadata
 from typing import BinaryIO, Union
 from os import path
 
-import numpy as np
-
 import ffmpeg
 from fastapi import FastAPI, File, UploadFile, Query, applications, APIRouter
 from fastapi.responses import StreamingResponse, RedirectResponse
@@ -82,7 +80,12 @@ def asr(
         default="txt", enum=["txt", "vtt", "srt", "tsv", "json"]),
 ):
     
-    result = transcribe(load_audio(audio_file.file, encode), language, output)
+    temp_audio_path = load_audio(audio_file.file, encode)
+
+    try:
+        result = transcribe(temp_audio_path, language, output)
+    finally:
+        os.remove(temp_audio_path)
 
     return StreamingResponse(
         result,  # iter([result]) ?
@@ -161,6 +164,9 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
     -------
     A NumPy array containing the audio waveform, in float32 dtype.
     """
+
+    temp_audio_path = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
+    
     if encode:
         try:
             # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
@@ -174,6 +180,7 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
             raise RuntimeError(
                 f"Failed to load audio: {e.stderr.decode()}") from e
     else:
-        out = file.read()
+        with open(temp_audio_path, "wb") as f:
+            f.write(file.read())
 
-    return np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
+    return temp_audio_path # np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
