@@ -79,7 +79,7 @@ RUN rm -rf /usr/share/dotnet \
 # Install fairseq from source
 RUN git clone https://github.com/pytorch/fairseq.git \
     && cd fairseq \
-    && pip install --editable ./ \
+    && pip install --editable ./
 
 COPY . .
 
