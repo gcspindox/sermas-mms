@@ -170,15 +170,14 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
     
     if encode:
         try:
+            with open(temp_audio_path, "wb") as f:
             # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
             # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
-            out, _ = (
-                ffmpeg.input("pipe:", threads=0)
-                .output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=sr)
-                .run(cmd="ffmpeg", capture_stdout=True, capture_stderr=True, input=file.read())
-            )
-            with open(temp_audio_path, "wb") as f:
-                f.write(out.read())
+                out, _ = (
+                    ffmpeg.input("pipe:", threads=0)
+                    .output(f, format="s16le", acodec="pcm_s16le", ac=1, ar=sr)
+                    .run(cmd="ffmpeg", capture_stdout=True, capture_stderr=True, input=file.read())
+                )
         except ffmpeg.Error as e:
             raise RuntimeError(
                 f"Failed to load audio: {e.stderr.decode()}") from e
