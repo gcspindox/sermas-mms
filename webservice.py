@@ -178,7 +178,7 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
                 .run(cmd="ffmpeg", capture_stdout=True, capture_stderr=True, input=file.read())
             )
             with open(temp_audio_path, "wb") as f:
-                f.write(file.read())
+                f.write(out.read())
         except ffmpeg.Error as e:
             raise RuntimeError(
                 f"Failed to load audio: {e.stderr.decode()}") from e
