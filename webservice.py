@@ -85,7 +85,8 @@ def asr(
     try:
         result = transcribe(temp_audio_path, language, output)
     finally:
-        os.remove(temp_audio_path)
+        pass
+        #os.remove(temp_audio_path)
 
     return StreamingResponse(
         result,  # iter([result]) ?
