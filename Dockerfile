@@ -1,4 +1,5 @@
-FROM debian:bookworm-slim AS ffmpeg
+# FROM debian:bookworm-slim AS ffmpeg
+FROM ubuntu:22.04
 
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get -qq update \
@@ -37,10 +38,12 @@ RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./
     PATH="$HOME/bin:$PATH" make -j$(nproc) && \
     make install && \
     hash -r
+RUN cp /FFmpeg-6.1.1/ffmpeg /usr/local/bin/ffmpeg
+RUN rm -rf /FFmpeg-6.1.1
 
-FROM swaggerapi/swagger-ui:v5.9.1 AS swagger-ui
+# FROM swaggerapi/swagger-ui:v5.9.1 AS swagger-ui
 
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+# FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 ENV PYTHON_VERSION=3.10
 ENV POETRY_VENV=/app/.venv
@@ -48,7 +51,7 @@ ENV POETRY_VENV=/app/.venv
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get -qq update \
     && apt-get -qq install --no-install-recommends \
-    && apt-get install -y git wget\
+    && apt-get install -y git wget \
     python${PYTHON_VERSION} \
     python${PYTHON_VERSION}-venv \
     python3-pip \
@@ -80,8 +83,12 @@ RUN rm -rf /usr/share/dotnet \
 # Install fairseq from source
 RUN git clone https://github.com/pytorch/fairseq.git \
     && cd fairseq \
-    && pip install --editable ./ \
-    && mv examples ..
+    && pip install --editable ./
+
+RUN mv fairseq/examples .
+RUN rm -rf fairseq
+
+RUN pip install fairseq
 
 RUN pip install git+https://github.com/ahmetoner/whisper-asr-webservice.git
 
@@ -89,13 +96,14 @@ RUN pip install soundfile editdistance "numpy<2" tensorboardX
 
 COPY . .
 
-COPY --from=ffmpeg /FFmpeg-6.1.1 /FFmpeg-6.1.1
-COPY --from=ffmpeg /root/bin/ffmpeg /usr/local/bin/ffmpeg
-COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui.css swagger-ui-assets/swagger-ui.css
-COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-assets/swagger-ui-bundle.js
+# COPY --from=ffmpeg /FFmpeg-6.1.1 /FFmpeg-6.1.1
+# COPY --from=ffmpeg /root/bin/ffmpeg /usr/local/bin/ffmpeg
+# COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui.css swagger-ui-assets/swagger-ui.css
+# COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-assets/swagger-ui-bundle.js
 
 # RUN poetry install
 RUN pip install torch==1.13.1+cu117 -f https://download.pytorch.org/whl/torch
+RUN pip install git+https://github.com/huggingface/transformers.git
 
 EXPOSE 9000
 

@@ -23,6 +23,16 @@ import soundfile as sf
 # else:
 #     from .openai_whisper.core import transcribe, language_detection
 
+from transformers import Wav2Vec2ForCTC, AutoProcessor
+import torch
+
+model_id = "facebook/mms-1b-all"
+
+processor = AutoProcessor.from_pretrained(model_id)
+model = Wav2Vec2ForCTC.from_pretrained(model_id)
+
+
+
 ASR_ENGINE = "MMS"
 
 SAMPLE_RATE = 16000
@@ -127,6 +137,19 @@ def transcribe(wave: np.ndarray, language: str, output_format: str):
     Returns:
         str: Transcribed text or formatted output.
     """
+    try:
+        inputs = processor(wave, sampling_rate=16_000, return_tensors="pt")
+
+        with torch.no_grad():
+            outputs = model(**inputs).logits
+
+        ids = torch.argmax(outputs, dim=-1)[0]
+        transcription = processor.decode(ids)
+        print(transcription)
+        return transcription
+    except Exception as e:
+        raise RuntimeError(f"Transcription error: {str(e)}")
+
     try:
         temp_audio_path = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
         sample_rate = 16000
