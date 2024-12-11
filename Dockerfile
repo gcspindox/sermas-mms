@@ -74,16 +74,18 @@ RUN poetry install --no-root
 RUN rm -rf /usr/share/dotnet \
     && rm -rf /opt/ghc \
     && rm -rf /usr/local/share/boost \
-    && rm -rf "$AGENT_TOOLSDIRECTORY"
+    && rm -rf "$AGENT_TOOLSDIRECTORY" \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install fairseq from source
 RUN git clone https://github.com/pytorch/fairseq.git \
     && cd fairseq \
-    && pip install --editable ./
+    && pip install --editable ./ \
+    && mv examples ..
 
 RUN pip install git+https://github.com/ahmetoner/whisper-asr-webservice.git
 
-RUN pip install soundfile    
+RUN pip install soundfile editdistance "numpy<2" tensorboardX
 
 COPY . .
 
@@ -93,7 +95,7 @@ COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui.css swagger-ui-assets/sw
 COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-assets/swagger-ui-bundle.js
 
 # RUN poetry install
-# RUN $POETRY_VENV/bin/pip install torch==1.13.1+cu117 -f https://download.pytorch.org/whl/torch
+RUN pip install torch==1.13.1+cu117 -f https://download.pytorch.org/whl/torch
 
 EXPOSE 9000
 

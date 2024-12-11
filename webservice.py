@@ -12,6 +12,9 @@ from fastapi import FastAPI, File, UploadFile, Query, applications, APIRouter
 from fastapi.responses import StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.docs import get_swagger_ui_html
+
+import numpy as np
+import soundfile as sf
 # from whisper import tokenizer
 
 # ASR_ENGINE = os.getenv("ASR_ENGINE", "openai_whisper")
@@ -80,10 +83,10 @@ def asr(
         default="txt", enum=["txt", "vtt", "srt", "tsv", "json"]),
 ):
     
-    temp_audio_path = load_audio(audio_file.file, encode)
+    wave = load_audio(audio_file.file, encode)
 
     try:
-        result = transcribe(temp_audio_path, language, output)
+        result = transcribe(wave, language, output)
     finally:
         pass
         #os.remove(temp_audio_path)
@@ -111,7 +114,7 @@ def asr(
 app.include_router(router)
 
 
-def transcribe(audio_file_path: str, language: str, output_format: str):
+def transcribe(wave: np.ndarray, language: str, output_format: str):
     """
     Transcribe audio using MMS ASR.
     Parameters:
@@ -125,14 +128,29 @@ def transcribe(audio_file_path: str, language: str, output_format: str):
         str: Transcribed text or formatted output.
     """
     try:
+        temp_audio_path = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
+        sample_rate = 16000
+
+        sf.write(temp_audio_path, wave, sample_rate)
+
         command = [
-            'python', 'fairseq/examples/mms/asr/infer/mms_infer.py',
-            '--model', '/content/fairseq/models_new/mms1b_all.pt',
+            'python', 'examples/mms/asr/infer/mms_infer.py',
+            '--model', '/app/model_new/mms1b_all.pt',
             '--lang', language,
-            '--audio', audio_file_path
+            '--audio', temp_audio_path
         ]
 
+
+        ## Fix to avoid 'cd fairseq'
+        # relative_path = 'fairseq'
+        # import sys
+        # if relative_path not in sys.path:
+        #     sys.path.append('fairseq')
+
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # if relative_path in sys.path:
+        #     sys.path.remove('fairseq')
 
         if result.returncode != 0:
             raise RuntimeError(f"MMS inference failed: {result.stderr}")
@@ -166,16 +184,13 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
     A NumPy array containing the audio waveform, in float32 dtype.
     """
 
-    temp_audio_path = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
-    
     if encode:
         try:
-            with open(temp_audio_path, "wb") as f:
             # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
             # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
-                out, _ = (
+            out, _ = (
                     ffmpeg.input("pipe:", threads=0)
-                    .output(f, format="s16le", acodec="pcm_s16le", ac=1, ar=sr)
+                    .output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=sr)
                     .run(cmd="ffmpeg", capture_stdout=True, capture_stderr=True, input=file.read())
                 )
         except ffmpeg.Error as e:
@@ -185,4 +200,4 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
         with open(temp_audio_path, "wb") as f:
             f.write(file.read())
 
-    return temp_audio_path # np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
+    return np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0

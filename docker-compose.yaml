@@ -9,6 +9,7 @@ services:
 
     entrypoint: /entrypoint.sh
     restart: unless-stopped
+    runtime: nvidia
     environment:
       - BASE_URL=/mms_stt
       - PYTHONUNBUFFERED=1
@@ -22,15 +23,15 @@ services:
     ports:
       - 19000:9000
     volumes:
-      - ./data/cache/pip:/root/.cache/pip
-      - ./data/models:/models
-      - ./data/cache/temp:/tmp
-      - ./data/models:/app/model_new
+      # - ./data/cache/pip:/root/.cache/pip
+      # - ./data/models:/models
+      # - ./data/cache/temp:/tmp
+      - /media/data250/sermas:/app/model_new
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: 2
               capabilities: [gpu]
 
