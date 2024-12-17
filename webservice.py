@@ -31,13 +31,10 @@ model_id = "facebook/mms-1b-all"
 processor = AutoProcessor.from_pretrained(model_id)
 model = Wav2Vec2ForCTC.from_pretrained(model_id)
 
-
-
 ASR_ENGINE = "MMS"
 
 SAMPLE_RATE = 16000
-LANGUAGE_CODES = ["eng", "ita"] # sorted(list(tokenizer.LANGUAGES.keys()))
-
+LANGUAGE_CODES = processor.tokenizer.vocab.keys()
 BASE_URL = os.getenv("BASE_URL", "")
 
 projectMetadata = importlib.metadata.metadata('whisper-asr-webservice')
@@ -92,6 +89,8 @@ def asr(
     output: Union[str, None] = Query(
         default="txt", enum=["txt", "vtt", "srt", "tsv", "json"]),
 ):
+
+    print(language)
     
     wave = load_audio(audio_file.file, encode)
 
@@ -138,6 +137,8 @@ def transcribe(wave: np.ndarray, language: str, output_format: str):
         str: Transcribed text or formatted output.
     """
     try:
+        processor.tokenizer.set_target_lang(language)
+        model.load_adapter(language)
         inputs = processor(wave, sampling_rate=16_000, return_tensors="pt")
 
         with torch.no_grad():
@@ -149,15 +150,19 @@ def transcribe(wave: np.ndarray, language: str, output_format: str):
         return transcription
     except Exception as e:
         raise RuntimeError(f"Transcription error: {str(e)}")
-
+        
     try:
         temp_audio_path = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
         sample_rate = 16000
 
         sf.write(temp_audio_path, wave, sample_rate)
+    except Exception as e:
+        raise RuntimeError(f"wav creation error: {str(e)}")
 
+
+    try:
         command = [
-            'python', 'examples/mms/asr/infer/mms_infer.py',
+            'python', '/app/examples/mms/asr/infer/mms_infer.py',
             '--model', '/app/model_new/mms1b_all.pt',
             '--lang', language,
             '--audio', temp_audio_path
