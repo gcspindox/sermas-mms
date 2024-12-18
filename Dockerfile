@@ -61,18 +61,18 @@ RUN ln -s -f /usr/bin/python${PYTHON_VERSION} /usr/bin/python3 && \
     ln -s -f /usr/bin/python${PYTHON_VERSION} /usr/bin/python && \
     ln -s -f /usr/bin/pip3 /usr/bin/pip
 
-RUN python3 -m venv $POETRY_VENV \
-    && $POETRY_VENV/bin/pip install -U pip==24.0 setuptools \
-    && $POETRY_VENV/bin/pip install poetry==1.6.1
+# RUN python3 -m venv $POETRY_VENV \
+#     && $POETRY_VENV/bin/pip install -U pip==24.0 setuptools \
+#     && $POETRY_VENV/bin/pip install poetry==1.6.1
 
-ENV PATH="${PATH}:${POETRY_VENV}/bin"
+# ENV PATH="${PATH}:${POETRY_VENV}/bin"
 
 WORKDIR /app
 
-COPY poetry.lock pyproject.toml ./
+# COPY poetry.lock pyproject.toml ./
 
-RUN poetry config virtualenvs.in-project true
-RUN poetry install --no-root
+# RUN poetry config virtualenvs.in-project true
+# RUN poetry install --no-root
 
 RUN rm -rf /usr/share/dotnet \
     && rm -rf /opt/ghc \
