@@ -26,10 +26,13 @@ import soundfile as sf
 from transformers import Wav2Vec2ForCTC, AutoProcessor
 import torch
 
+print("Is CUDA available:", torch.cuda.is_available())
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 model_id = "facebook/mms-1b-all"
 
 processor = AutoProcessor.from_pretrained(model_id)
-model = Wav2Vec2ForCTC.from_pretrained(model_id)
+model = Wav2Vec2ForCTC.from_pretrained(model_id).to(device)
 
 ASR_ENGINE = "MMS"
 
@@ -139,7 +142,14 @@ def transcribe(wave: np.ndarray, language: str, output_format: str):
     try:
         processor.tokenizer.set_target_lang(language)
         model.load_adapter(language)
-        inputs = processor(wave, sampling_rate=16_000, return_tensors="pt")
+        inputs = processor(wave, sampling_rate=16_000, return_tensors="pt").to(device)
+
+        if torch.cuda.is_available():
+            # Move the model to the GPU
+            model = model.to("cuda")
+            print("Model loaded on GPU.")
+        else:
+            print("CUDA is not available. Using CPU.")
 
         with torch.no_grad():
             outputs = model(**inputs).logits
@@ -148,49 +158,6 @@ def transcribe(wave: np.ndarray, language: str, output_format: str):
         transcription = processor.decode(ids)
         print(transcription)
         return transcription
-    except Exception as e:
-        raise RuntimeError(f"Transcription error: {str(e)}")
-        
-    try:
-        temp_audio_path = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
-        sample_rate = 16000
-
-        sf.write(temp_audio_path, wave, sample_rate)
-    except Exception as e:
-        raise RuntimeError(f"wav creation error: {str(e)}")
-
-
-    try:
-        command = [
-            'python', '/app/examples/mms/asr/infer/mms_infer.py',
-            '--model', '/app/model_new/mms1b_all.pt',
-            '--lang', language,
-            '--audio', temp_audio_path
-        ]
-
-
-        ## Fix to avoid 'cd fairseq'
-        # relative_path = 'fairseq'
-        # import sys
-        # if relative_path not in sys.path:
-        #     sys.path.append('fairseq')
-
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        # if relative_path in sys.path:
-        #     sys.path.remove('fairseq')
-
-        if result.returncode != 0:
-            raise RuntimeError(f"MMS inference failed: {result.stderr}")
-
-        transcription = result.stdout.strip()
-        if output_format == "json":
-            return {"transcription": transcription}
-        elif output_format in ["txt", "vtt", "srt", "tsv"]:
-            return transcription
-        else:
-            raise ValueError(f"Unsupported output format: {output_format}")
-
     except Exception as e:
         raise RuntimeError(f"Transcription error: {str(e)}")
 
