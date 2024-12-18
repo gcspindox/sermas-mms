@@ -80,26 +80,11 @@ RUN rm -rf /usr/share/dotnet \
     && rm -rf "$AGENT_TOOLSDIRECTORY" \
     && rm -rf /var/lib/apt/lists/*
 
-# Install fairseq from source
-RUN git clone https://github.com/pytorch/fairseq.git \
-    && cd fairseq \
-    && pip install --editable ./
-
-RUN mv fairseq/examples .
-RUN rm -rf fairseq
-
-RUN pip install fairseq
-
 RUN pip install git+https://github.com/ahmetoner/whisper-asr-webservice.git
 
 RUN pip install soundfile editdistance "numpy<2" tensorboardX
 
 COPY . .
-
-# COPY --from=ffmpeg /FFmpeg-6.1.1 /FFmpeg-6.1.1
-# COPY --from=ffmpeg /root/bin/ffmpeg /usr/local/bin/ffmpeg
-# COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui.css swagger-ui-assets/swagger-ui.css
-# COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-assets/swagger-ui-bundle.js
 
 # RUN poetry install
 RUN pip install torch==1.13.1+cu117 -f https://download.pytorch.org/whl/torch
