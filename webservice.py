@@ -144,13 +144,6 @@ def transcribe(wave: np.ndarray, language: str, output_format: str):
         model.load_adapter(language)
         inputs = processor(wave, sampling_rate=16_000, return_tensors="pt").to(device)
 
-        if torch.cuda.is_available():
-            # Move the model to the GPU
-            model = model.to("cuda")
-            print("Model loaded on GPU.")
-        else:
-            print("CUDA is not available. Using CPU.")
-
         with torch.no_grad():
             outputs = model(**inputs).logits
 
@@ -179,20 +172,17 @@ def load_audio(file: BinaryIO, encode=True, sr: int = SAMPLE_RATE):
     A NumPy array containing the audio waveform, in float32 dtype.
     """
 
-    if encode:
-        try:
-            # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
-            # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
-            out, _ = (
-                    ffmpeg.input("pipe:", threads=0)
-                    .output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=sr)
-                    .run(cmd="ffmpeg", capture_stdout=True, capture_stderr=True, input=file.read())
-                )
-        except ffmpeg.Error as e:
-            raise RuntimeError(
-                f"Failed to load audio: {e.stderr.decode()}") from e
-    else:
-        with open(temp_audio_path, "wb") as f:
-            f.write(file.read())
+    # if encode:
+    try:
+        # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
+        # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
+        out, _ = (
+                ffmpeg.input("pipe:", threads=0)
+                .output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=sr)
+                .run(cmd="ffmpeg", capture_stdout=True, capture_stderr=True, input=file.read())
+            )
+    except ffmpeg.Error as e:
+        raise RuntimeError(
+            f"Failed to load audio: {e.stderr.decode()}") from e
 
     return np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
